@@ -1,0 +1,368 @@
+---
+title: "Week 52"
+author: "Shaun Stearns"
+date: "9/26/2019"
+output: word_document
+---
+
+```{r}
+library(DescTools)
+library(haven)
+library(tidyverse)
+library(lubridate)
+library(plyr)
+library(norm2)
+library(norm)
+
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(randomForest)
+library(adabag)
+library(jtools)
+library(sandwich)
+library(rattle)
+library(gbm)
+library(doSNOW)
+library(foreach)
+library(ggplot2)
+library(rfUtilities)
+library(party)
+
+library("cluster")
+library("factoextra")
+library("magrittr")
+library("factoextra")
+```
+
+
+
+# Multipleression 1
+## Lowest Weigh-in
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(10,20,23,26,29,32,35,38,41,44,47,50,53)]
+DF.t = scale(DF.t, center = TRUE, scale = TRUE)
+DF.t <- as.data.frame(DF.t)
+reg <- lm(Lowestweighinkg ~., DF.t)
+```
+
+```{r, echo=FALSE}
+summ(reg, part.corr = TRUE, confint = TRUE, coeftable = TRUE)
+```
+
+```{r, echo=FALSE}
+plot_summs(reg, ci_level = .95, exp = TRUE, robust = TRUE)
+```
+
+
+
+#ression Tree 1
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(10,20,23,26,29,32,35,38,41,44,47,50,53)]
+model <- train(
+  Lowestweighinkg ~., DF.t, method = "ctree",
+  trControl = trainControl("cv", number = 10),
+  tuneGrid = expand.grid(mincriterion = 0.95)
+)
+model$results
+```
+
+## Tree Model
+```{r}
+plot(model$finalModel, type = "simple")
+```
+
+
+
+# Random Forest 1
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(10,20,23,26,29,32,35,38,41,44,47,50,53)]
+rf <- randomForest(Lowestweighinkg ~ ., data = DF.t, ntree = 25,
+                   mtry = 4, nodesize = 5, importance = TRUE)
+```
+
+## Signicance Testing
+```{r}
+rf.perm <- rf.significance(rf, DF.t, q = 0.99, p = 0.05, nperm=99, ntree=25)
+rf.perm
+```
+
+## Variable Importance Plot
+```{r}
+varImpPlot(rf, type = 1, main = "Lowest Rec Weight")
+```
+
+
+
+# Multipleression 2
+## Difference Between First Weigh-in and Lowest Weigh-in
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(11,20,23,26,29,32,35,38,41,44,47,50,53)]
+DF.t = scale(DF.t, center = TRUE, scale = TRUE)
+DF.t <- as.data.frame(DF.t)
+reg <- lm(AbsDiffFirstWeighinkg ~., DF.t)
+```
+
+```{r, echo=FALSE}
+summ(reg, part.corr = TRUE, confint = TRUE, coeftable = TRUE)
+```
+
+```{r, echo=FALSE}
+plot_summs(reg, ci_level = .95, exp = TRUE, robust = TRUE)
+```
+
+
+
+#ression Tree 2
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(11,20,23,26,29,32,35,38,41,44,47,50,53)]
+model <- train(
+  AbsDiffFirstWeighinkg ~., DF.t, method = "ctree",
+  trControl = trainControl("cv", number = 10),
+  tuneGrid = expand.grid(mincriterion = 0.95)
+)
+model$results
+```
+
+## Tree Plot
+```{r}
+plot(model$finalModel, type = "simple")
+```
+
+
+# Random Forest 2
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(11,20,23,26,29,32,35,38,41,44,47,50,53)]
+rf <- randomForest(AbsDiffFirstWeighinkg ~ ., data = DF.t, ntree = 25,
+                   mtry = 4, nodesize = 5, importance = TRUE)
+```
+
+## Signicance Testing
+```{r}
+rf.perm <- rf.significance(rf, DF.t, q = 0.99, p = 0.05, nperm=99, ntree=25)
+rf.perm
+```
+
+## Variable Importance Plot
+```{r}
+varImpPlot(rf, type = 1, main = "Absolute Diff Weight (1st)")
+```
+
+
+
+# Multipleression 3
+## Differnece Between Initial Weigh-in and Lowest Weigh-in
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(12,20,23,26,29,32,35,38,41,44,47,50,53)]
+DF.t = scale(DF.t, center = TRUE, scale = TRUE)
+DF.t <- as.data.frame(DF.t)
+reg <- lm(AbsDiffInitWeighinkg ~., DF.t)
+```
+
+```{r, echo=FALSE}
+summ(reg, part.corr = TRUE, confint = TRUE, coeftable = TRUE)
+```
+
+```{r, echo=FALSE}
+plot_summs(reg, ci_level = .95, exp = TRUE, robust = TRUE)
+```
+
+
+
+#ression Tree 3       
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(12,20,23,26,29,32,35,38,41,44,47,50,53)]
+model <- train(
+  AbsDiffInitWeighinkg ~., DF.t, method = "ctree",
+  trControl = trainControl("cv", number = 10),
+  tuneGrid = expand.grid(mincriterion = 0.95)
+)
+model$results
+```
+           
+## Tree Model
+```{r}
+plot(model$finalModel, type = "simple")
+```
+
+
+
+# Random Forest 3
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(12,20,23,26,29,32,35,38,41,44,47,50,53)]
+rf <- randomForest(AbsDiffInitWeighinkg ~ ., data = DF.t, ntree = 25,
+                   mtry = 4, nodesize = 5, importance = TRUE)
+```
+
+## Signicance Testing
+```{r}
+rf.perm <- rf.significance(rf, DF.t, q = 0.99, p = 0.05, nperm=99, ntree=25)
+rf.perm
+```
+
+## Variable Importance Plot
+```{r}
+varImpPlot(rf, type = 1, main = "Absolute Diff Weight (Init)")
+```
+
+
+
+# Multipleression 4
+## Curriculum Week (or Length of Time with DF?)
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(17,20,23,26,29,32,35,38,41,44,47,50,53)]
+DF.t = scale(DF.t, center = TRUE, scale = TRUE)
+DF.t <- as.data.frame(DF.t)
+reg <- lm(CurriculumWeek ~., DF.t)
+```
+
+```{r, echo=FALSE}
+summ(reg, part.corr = TRUE, confint = TRUE, coeftable = TRUE)
+```
+
+```{r, echo=FALSE}
+plot_summs(reg, ci_level = .95, exp = TRUE, robust = TRUE)
+```
+
+
+
+#ression Tree 4
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(17,20,23,26,29,32,35,38,41,44,47,50,53)]
+model <- train(
+  CurriculumWeek ~., DF.t, method = "ctree",
+  trControl = trainControl("cv", number = 10),
+  tuneGrid = expand.grid(mincriterion = 0.95)
+)
+model$results
+```
+
+## Tree Model
+```{r}
+plot(model$finalModel, type = "simple")
+```
+
+
+
+# Random Forest 4
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(17,20,23,26,29,32,35,38,41,44,47,50,53)]
+rf <- randomForest(CurriculumWeek ~ ., data = DF.t, ntree = 25,
+                   mtry = 4, nodesize = 5, importance = TRUE)
+```
+
+## Signicance Testing
+```{r}
+rf.perm <- rf.significance(rf, DF.t, q = 0.99, p = 0.05, nperm=99, ntree=25)
+rf.perm
+```
+
+## Variable Importance Plot
+```{r}
+varImpPlot(rf, type = 1, main = "Goal Weight")
+```
+
+
+
+# Multipleression 5
+## Differnce in BMI
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(14,20,23,26,29,32,35,38,41,44,47,50,53)]
+DF.t = scale(DF.t, center = TRUE, scale = TRUE)
+DF.t <- as.data.frame(DF.t)
+reg <- lm(BMIDifference ~., DF.t)
+```
+
+```{r, echo=FALSE}
+summ(reg, part.corr = TRUE, confint = TRUE, coeftable = TRUE)
+```
+
+```{r, echo=FALSE}
+plot_summs(reg, ci_level = .95, exp = TRUE, robust = TRUE)
+```
+
+
+
+
+#ression Tree 5
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(14,20,23,26,29,32,35,38,41,44,47,50,53)]
+model <- train(
+  BMIDifference ~., DF.t, method = "ctree",
+  trControl = trainControl("cv", number = 10),
+  tuneGrid = expand.grid(mincriterion = 0.95)
+)
+model$results
+```
+
+## Tree Model
+```{r}
+plot(model$finalModel, type = "simple")
+```
+
+
+
+# Random Forest 5
+```{r}
+DF <- read.csv("C:/Users/LaoTz/Desktop/DF Articles/WeightLoss.csv", header = TRUE)
+DF <- na.omit(DF)
+DF.t <- DF[-c(36,37,56)]
+DF.t <- DF.t[c(14,20,23,26,29,32,35,38,41,44,47,50,53)]
+rf <- randomForest(BMIDifference ~ ., data = DF.t, ntree = 25,
+                   mtry = 4, nodesize = 5, importance = TRUE)
+```
+
+## Signicance Testing
+```{r}
+rf.perm <- rf.significance(rf, DF.t, q = 0.99, p = 0.05, nperm=99, ntree=25)
+rf.perm
+```
+
+## Variable Importance Plot
+```{r}
+varImpPlot(rf, type = 1, main = "BMI Diff")
+```
+
+
